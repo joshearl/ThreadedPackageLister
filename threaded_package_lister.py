@@ -12,13 +12,25 @@ class ListPackagesCommand(sublime_plugin.WindowCommand):
         print "Setting thread handler on main thread ..."
         self.handle_thread(threaded_package_lister)
 
-    def handle_thread(self, thread):
+    def handle_thread(self, thread, i=0, direction=1):
         if thread.is_alive():
             print "Thread is still running ..."
-            sublime.set_timeout(lambda: self.handle_thread(thread), 20)
+
+            before = i % 8
+            after = (7) - before
+            if not after:
+                direction = -1
+            if not before:
+                direction = 1
+            i += direction
+            self.window.active_view().set_status('threaded_package_lister', 'PackageLister [%s=%s]' % \
+                (' ' * before, ' ' * after))
+
+            sublime.set_timeout(lambda: self.handle_thread(thread, i, direction), 20)
             return
 
         packages_list = thread.result
+        self.window.active_view().erase_status('threaded_package_lister')
         print "Thread is finished."
         print packages_list
 
