@@ -4,6 +4,9 @@ import threading
 import os
 
 class ListPackagesCommand(sublime_plugin.WindowCommand):
+    def __init__(self, window):
+        self.view = window.active_view()
+
     def run(self):
         threaded_package_lister = ThreadedPackageLister()
         print "Starting thread ..."
@@ -14,7 +17,7 @@ class ListPackagesCommand(sublime_plugin.WindowCommand):
 
     def handle_thread(self, thread, i=0, direction=1):
         if thread.is_alive():
-            print "Thread is still running ..."
+            print "Thread is running ..."
 
             before = i % 8
             after = (7) - before
@@ -23,16 +26,18 @@ class ListPackagesCommand(sublime_plugin.WindowCommand):
             if not before:
                 direction = 1
             i += direction
-            self.window.active_view().set_status('threaded_package_lister', 'PackageLister [%s=%s]' % \
-                (' ' * before, ' ' * after))
+            if (self.view):
+                self.view.set_status('threaded_package_lister', 'PackageLister [%s=%s]' % \
+                    (' ' * before, ' ' * after))
 
             sublime.set_timeout(lambda: self.handle_thread(thread, i, direction), 20)
             return
 
         packages_list = thread.result
-        self.window.active_view().erase_status('threaded_package_lister')
+        if (self.view):
+            self.view.erase_status('threaded_package_lister')
         print "Thread is finished."
-        print packages_list
+        print "Installed packages: " + ", ".join(packages_list)
 
 class ThreadedPackageLister(threading.Thread):
     def __init__(self):
